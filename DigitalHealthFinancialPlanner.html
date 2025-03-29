@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Health Financial Planning Workbook</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .workbook {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: bold;
+            color: #1a73e8;
+        }
+        .worksheet {
+            display: none;
+        }
+        .worksheet.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        .notes {
+            font-style: italic;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .breakeven-result {
+            padding: 15px;
+            background-color: #e8f0fe;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 4px solid #1a73e8;
+        }
+        
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="workbook">
+        <h1>Digital Health Financial Planning Workbook</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showWorksheet('cost-mapping')">Cost Mapping</div>
+            <div class="tab" onclick="showWorksheet('breakeven-analysis')">Breakeven Analysis</div>
+        </div>
+        
+        <!-- Worksheet 1: Cost Mapping -->
+        <div id="cost-mapping" class="worksheet active">
+            <h2>Resource and Cost Mapping</h2>
+            
+            <table id="cost-table">
+                <thead>
+                    <tr>
+                        <th>Cost Category</th>
+                        <th>Fixed/Variable?</th>
+                        <th>Estimated Monthly Cost ($)</th>
+                        <th>Notes/Assumptions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" value="Platform Subscription" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable">Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="500" onchange="calculateTotals()"></td>
+                        <td><input type="text" value="Monthly SaaS fee"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Developer Salaries" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable">Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="15000" onchange="calculateTotals()"></td>
+                        <td><input type="text" value="2 Full-time devs"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Marketing Ads" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable" selected>Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="1000" onchange="calculateTotals()"></td>
+                        <td><input type="text" value="Varies with campaigns"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Specialist Payments" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable" selected>Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="8000" onchange="calculateTotals()"></td>
+                        <td><input type="text" value="Based on consult volume"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Office Rent" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable">Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="2500" onchange="calculateTotals()"></td>
+                        <td><input type="text" value=""></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Cloud Hosting" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable" selected>Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="300" onchange="calculateTotals()"></td>
+                        <td><input type="text" value="Scales with usage"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="Legal/Compliance" class="category-name"></td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable">Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="700" onchange="calculateTotals()"></td>
+                        <td><input type="text" value="Retainer fee"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="text" placeholder="Add new category..." class="category-name">
+                        </td>
+                        <td>
+                            <select class="cost-type" onchange="calculateTotals()">
+                                <option value="Fixed">Fixed</option>
+                                <option value="Variable">Variable</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="cost-amount" value="0" onchange="calculateTotals()"></td>
+                        <td><input type="text" placeholder="Add notes..."></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="2">Total Fixed Costs:</td>
+                        <td id="total-fixed">$18,700</td>
+                        <td class="tooltip">
+                            <span class="tooltiptext">Sum of all costs marked as "Fixed"</span>
+                            ℹ️
+                        </td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="2">Total Variable Costs:</td>
+                        <td id="total-variable">$9,300</td>
+                        <td class="tooltip">
+                            <span class="tooltiptext">Sum of all costs marked as "Variable"</span>
+                            ℹ️
+                        </td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="2">Total Monthly Costs:</td>
+                        <td id="total-costs">$28,000</td>
+                        <td class="tooltip">
+                            <span class="tooltiptext">Sum of all costs (Fixed + Variable)</span>
+                            ℹ️
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="addCostRow()">+ Add Cost Category</button>
+                <button onclick="downloadExcel('cost-mapping')" class="download-btn">
+                    <span style="margin-right: 5px;">📥</span> Download as Excel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Worksheet 2: Breakeven Analysis -->
+        <div id="breakeven-analysis" class="worksheet">
+            <h2>Breakeven Analysis Calculator</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Inputs</th>
+                        <th>Notes/Instructions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Revenue per Unit ($)</td>
+                        <td><input type="number" id="revenue-per-unit" value="150" onchange="calculateBreakeven()"></td>
+                        <td class="notes">
+                            Enter avg $ earned per sale/customer
+                            <div class="tooltip">
+                                <span class="tooltiptext">This is the average amount of revenue generated from each sale or customer</span>
+                                ℹ️
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Variable Cost per Unit ($)</td>
+                        <td><input type="number" id="variable-cost-per-unit" value="50" onchange="calculateBreakeven()"></td>
+                        <td class="notes">
+                            Enter avg variable $ per sale/customer
+                            <div class="tooltip">
+                                <span class="tooltiptext">This is the average variable cost associated with each sale or customer</span>
+                                ℹ️
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Total Fixed Costs ($)</td>
+                        <td id="fixed-costs">18,700</td>
+                        <td class="notes">
+                            Pulled automatically from Cost Mapping sheet
+                            <div class="tooltip">
+                                <span class="tooltiptext">This value is linked to the Total Fixed Costs calculated on the Cost Mapping sheet</span>
+                                ℹ️
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Calculations</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Breakeven Volume (Units)</td>
+                        <td id="breakeven-volume">187</td>
+                        <td class="notes">
+                            Units needed to cover costs
+                            <div class="tooltip">
+                                <span class="tooltiptext">The number of units (sales/customers) needed to break even</span>
+                                ℹ️
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Breakeven Revenue ($)</td>
+                        <td id="breakeven-revenue">$28,050</td>
+                        <td class="notes">
+                            Total revenue needed to cover costs
+                            <div class="tooltip">
+                                <span class="tooltiptext">The total revenue needed to break even</span>
+                                ℹ️
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="breakeven-result">
+                <h3>Breakeven Analysis Result</h3>
+                <p id="breakeven-summary">Based on current inputs, you need to sell <strong>187 units</strong> to break even, generating <strong>$28,050</strong> in revenue.</p>
+                <p>This means:</p>
+                <ul>
+                    <li>Each unit contributes <strong>$100</strong> towards fixed costs (Revenue per unit - Variable cost per unit)</li>
+                    <li>After selling 187 units, each additional unit sold contributes <strong>$100</strong> to profit</li>
+                </ul>
+            </div>
+            
+            <h3>Sensitivity Analysis</h3>
+            <p>Try adjusting the Revenue per Unit and Variable Cost per Unit values to see how they impact your breakeven point.</p>
+            
+            <div id="chart-container" style="height: 400px; margin-top: 30px;">
+                <canvas id="breakeven-chart"></canvas>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="downloadExcel('breakeven-analysis')" class="download-btn">
+                    <span style="margin-right: 5px;">📥</span> Download as Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show the selected worksheet
+        function showWorksheet(id) {
+            document.querySelectorAll('.worksheet').forEach(sheet => {
+                sheet.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(id).classList.add('active');
+            document.querySelector(`.tab[onclick="showWorksheet('${id}')"]`).classList.add('active');
+            
+            // Update fixed costs on breakeven analysis when switching to that tab
+            if (id === 'breakeven-analysis') {
+                document.getElementById('fixed-costs').textContent = document.getElementById('total-fixed').textContent;
+                calculateBreakeven();
+            }
+        }
+        
+        // Add a new cost category row
+        function addCostRow() {
+            const table = document.querySelector('#cost-table tbody');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="Add new category..." class="category-name"></td>
+                <td>
+                    <select class="cost-type" onchange="calculateTotals()">
+                        <option value="Fixed">Fixed</option>
+                        <option value="Variable">Variable</option>
+                    </select>
+                </td>
+                <td><input type="number" class="cost-amount" value="0" onchange="calculateTotals()"></td>
+                <td><input type="text" placeholder="Add notes..."></td>
+            `;
+            
+            table.appendChild(newRow);
+        }
+        
+        // Calculate totals for the cost mapping worksheet
+        function calculateTotals() {
+            const rows = document.querySelectorAll('#cost-table tbody tr');
+            let totalFixed = 0;
+            let totalVariable = 0;
+            
+            rows.forEach(row => {
+                const costType = row.querySelector('.cost-type').value;
+                const costAmount = parseFloat(row.querySelector('.cost-amount').value) || 0;
+                
+                if (costType === 'Fixed') {
+                    totalFixed += costAmount;
+                } else {
+                    totalVariable += costAmount;
+                }
+            });
+            
+            const totalCosts = totalFixed + totalVariable;
+            
+            document.getElementById('total-fixed').textContent = '$' + totalFixed.toLocaleString();
+            document.getElementById('total-variable').textContent = '$' + totalVariable.toLocaleString();
+            document.getElementById('total-costs').textContent = '$' + totalCosts.toLocaleString();
+            
+            // Update fixed costs on breakeven analysis
+            document.getElementById('fixed-costs').textContent = '$' + totalFixed.toLocaleString();
+            
+            // Recalculate breakeven if we're on that tab
+            if (document.getElementById('breakeven-analysis').classList.contains('active')) {
+                calculateBreakeven();
+            }
+        }
+        
+        // Calculate breakeven analysis
+        function calculateBreakeven() {
+            const revenuePerUnit = parseFloat(document.getElementById('revenue-per-unit').value) || 0;
+            const variableCostPerUnit = parseFloat(document.getElementById('variable-cost-per-unit').value) || 0;
+            const fixedCostsText = document.getElementById('fixed-costs').textContent;
+            const fixedCosts = parseFloat(fixedCostsText.replace(/[^0-9.-]+/g, '')) || 0;
+            
+            const contributionMargin = revenuePerUnit - variableCostPerUnit;
+            
+            let breakevenVolume, breakevenRevenue;
+            
+            if (contributionMargin <= 0) {
+                breakevenVolume = "N/A - Check Inputs";
+                breakevenRevenue = "N/A - Check Inputs";
+                document.getElementById('breakeven-summary').innerHTML = 
+                    "Your variable cost per unit is greater than or equal to your revenue per unit. " +
+                    "This means you cannot break even regardless of volume. " +
+                    "Please adjust your inputs.";
+            } else {
+                breakevenVolume = Math.ceil(fixedCosts / contributionMargin);
+                breakevenRevenue = breakevenVolume * revenuePerUnit;
+                
+                document.getElementById('breakeven-summary').innerHTML = 
+                    `Based on current inputs, you need to sell <strong>${breakevenVolume.toLocaleString()} units</strong> ` +
+                    `to break even, generating <strong>$${breakevenRevenue.toLocaleString()}</strong> in revenue.`;
+                
+                // Update contribution margin info
+                const contributionList = document.querySelector('.breakeven-result ul');
+                contributionList.innerHTML = `
+                    <li>Each unit contributes <strong>$${contributionMargin.toLocaleString()}</strong> towards fixed costs (Revenue per unit - Variable cost per unit)</li>
+                    <li>After selling ${breakevenVolume.toLocaleString()} units, each additional unit sold contributes <strong>$${contributionMargin.toLocaleString()}</strong> to profit</li>
+                `;
+            }
+            
+            document.getElementById('breakeven-volume').textContent = breakevenVolume.toLocaleString();
+            document.getElementById('breakeven-revenue').textContent = 
+                typeof breakevenRevenue === 'number' ? '$' + breakevenRevenue.toLocaleString() : breakevenRevenue;
+        }
+        
+        // Chart variables
+        let breakevenChart = null;
+        
+        // Function to create or update the breakeven chart
+        function updateBreakevenChart() {
+            const revenuePerUnit = parseFloat(document.getElementById('revenue-per-unit').value) || 0;
+            const variableCostPerUnit = parseFloat(document.getElementById('variable-cost-per-unit').value) || 0;
+            const fixedCostsText = document.getElementById('fixed-costs').textContent;
+            const fixedCosts = parseFloat(fixedCostsText.replace(/[^0-9.-]+/g, '')) || 0;
+            
+            // Generate data points for the chart
+            const maxUnits = Math.ceil(fixedCosts / (revenuePerUnit - variableCostPerUnit) * 2);
+            if (maxUnits <= 0 || !isFinite(maxUnits)) return; // Don't draw chart with invalid inputs
+            
+            const units = [];
+            const totalCosts = [];
+            const totalRevenues = [];
+            const profits = [];
+            
+            for (let i = 0; i <= maxUnits; i += Math.max(1, Math.floor(maxUnits / 20))) {
+                units.push(i);
+                const cost = fixedCosts + (variableCostPerUnit * i);
+                const revenue = revenuePerUnit * i;
+                const profit = revenue - cost;
+                
+                totalCosts.push(cost);
+                totalRevenues.push(revenue);
+                profits.push(profit);
+            }
+            
+            // Create or update the chart
+            const ctx = document.getElementById('breakeven-chart').getContext('2d');
+            
+            if (breakevenChart) {
+                breakevenChart.destroy();
+            }
+            
+            breakevenChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: units,
+                    datasets: [
+                        {
+                            label: 'Total Costs',
+                            data: totalCosts,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Total Revenue',
+                            data: totalRevenues,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderWidth: 2,
+                            fill: false
+                        },
+                        {
+                            label: 'Profit/Loss',
+                            data: profits,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Number of Units'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += '$' + context.parsed.y.toLocaleString();
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update the calculateBreakeven function to also update the chart
+        const originalCalculateBreakeven = calculateBreakeven;
+        calculateBreakeven = function() {
+            originalCalculateBreakeven();
+            updateBreakevenChart();
+        };
+        
+        // Function to download worksheet data as Excel
+        async function downloadExcel(worksheetId) {
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+            
+            if (worksheetId === 'cost-mapping') {
+                // Get cost mapping data
+                const costData = [];
+                
+                // Add header row
+                costData.push(['Cost Category', 'Fixed/Variable', 'Estimated Monthly Cost ($)', 'Notes/Assumptions']);
+                
+                // Get all cost rows
+                const costRows = document.querySelectorAll('#cost-table tbody tr');
+                costRows.forEach(row => {
+                    const categoryName = row.querySelector('.category-name').value;
+                    const costType = row.querySelector('.cost-type').value;
+                    const costAmount = row.querySelector('.cost-amount').value;
+                    const notes = row.querySelector('td:last-child input').value;
+                    
+                    costData.push([categoryName, costType, parseFloat(costAmount) || 0, notes]);
+                });
+                
+                // Add summary rows
+                const totalFixed = document.getElementById('total-fixed').textContent;
+                const totalVariable = document.getElementById('total-variable').textContent;
+                const totalCosts = document.getElementById('total-costs').textContent;
+                
+                costData.push([]);
+                costData.push(['Total Fixed Costs:', totalFixed]);
+                costData.push(['Total Variable Costs:', totalVariable]);
+                costData.push(['Total Monthly Costs:', totalCosts]);
+                
+                // Create worksheet and add to workbook
+                const ws = XLSX.utils.aoa_to_sheet(costData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Cost Mapping');
+                
+                // Download the workbook
+                XLSX.writeFile(wb, 'Digital_Health_Financial_Planner_Costs.xlsx');
+                
+            } else if (worksheetId === 'breakeven-analysis') {
+                // Get breakeven analysis data
+                const breakevenData = [];
+                
+                // Add title
+                breakevenData.push(['Breakeven Analysis']);
+                breakevenData.push([]);
+                
+                // Add inputs section
+                breakevenData.push(['Inputs']);
+                const revenuePerUnit = document.getElementById('revenue-per-unit').value;
+                const variableCostPerUnit = document.getElementById('variable-cost-per-unit').value;
+                const fixedCosts = document.getElementById('fixed-costs').textContent;
+                
+                breakevenData.push(['Revenue per Unit ($)', parseFloat(revenuePerUnit) || 0]);
+                breakevenData.push(['Variable Cost per Unit ($)', parseFloat(variableCostPerUnit) || 0]);
+                breakevenData.push(['Total Fixed Costs ($)', fixedCosts]);
+                breakevenData.push([]);
+                
+                // Add calculations section
+                breakevenData.push(['Calculations']);
+                const breakevenVolume = document.getElementById('breakeven-volume').textContent;
+                const breakevenRevenue = document.getElementById('breakeven-revenue').textContent;
+                
+                breakevenData.push(['Breakeven Volume (Units)', breakevenVolume]);
+                breakevenData.push(['Breakeven Revenue ($)', breakevenRevenue]);
+                breakevenData.push([]);
+                
+                // Add summary
+                breakevenData.push(['Breakeven Analysis Result']);
+                breakevenData.push([document.getElementById('breakeven-summary').textContent.replace(/<[^>]*>/g, '')]);
+                breakevenData.push([]);
+                
+                // Create worksheet and add to workbook
+                const ws = XLSX.utils.aoa_to_sheet(breakevenData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Breakeven Analysis');
+                
+                // Add chart as a separate sheet
+                try {
+                    // Convert chart to image
+                    const canvas = document.getElementById('breakeven-chart');
+                    const chartImgUrl = canvas.toDataURL('image/png');
+                    
+                    // Create a worksheet with the chart data
+                    const chartData = [];
+                    chartData.push(['Breakeven Analysis Chart']);
+                    chartData.push([]);
+                    
+                    // Add data points for the chart
+                    chartData.push(['Units', 'Total Costs', 'Total Revenue', 'Profit/Loss']);
+                    
+                    const revenuePerUnit = parseFloat(document.getElementById('revenue-per-unit').value) || 0;
+                    const variableCostPerUnit = parseFloat(document.getElementById('variable-cost-per-unit').value) || 0;
+                    const fixedCostsText = document.getElementById('fixed-costs').textContent;
+                    const fixedCosts = parseFloat(fixedCostsText.replace(/[^0-9.-]+/g, '')) || 0;
+                    
+                    const maxUnits = Math.ceil(fixedCosts / (revenuePerUnit - variableCostPerUnit) * 2);
+                    if (maxUnits > 0 && isFinite(maxUnits)) {
+                        for (let i = 0; i <= maxUnits; i += Math.max(1, Math.floor(maxUnits / 20))) {
+                            const cost = fixedCosts + (variableCostPerUnit * i);
+                            const revenue = revenuePerUnit * i;
+                            const profit = revenue - cost;
+                            
+                            chartData.push([i, cost, revenue, profit]);
+                        }
+                    }
+                    
+                    const wsChart = XLSX.utils.aoa_to_sheet(chartData);
+                    XLSX.utils.book_append_sheet(wb, wsChart, 'Chart Data');
+                    
+                } catch (e) {
+                    console.error('Error adding chart data to Excel:', e);
+                    // Continue without the chart if there's an error
+                }
+                
+                // Download the workbook
+                XLSX.writeFile(wb, 'Digital_Health_Financial_Planner_Breakeven.xlsx');
+            }
+        }
+        
+        // Initialize calculations
+        calculateTotals();
+        calculateBreakeven();
+    </script>
+</body>
+</html>
